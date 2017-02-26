@@ -24,11 +24,11 @@ defmodule Jira.API do
 
   def process_response_body(body) do
     body
-    |> decode_body
+    |> decode_body()
   end
 
   def process_request_headers(headers) do
-    [{"authorization", authorization_header}|headers]
+    [{"authorization", authorization_header()}|headers]
   end
 
   defp decode_body(""), do: ""
@@ -36,16 +36,20 @@ defmodule Jira.API do
 
   ### Internal Helpers
   def authorization_header do
-    credentials = encoded_credentials(username, password)
+    credentials = encoded_credentials(username(), password())
     "Basic #{credentials}"
   end
 
   defp encoded_credentials(user, pass) do
     "#{user}:#{pass}"
-    |> Base.encode64
+    |> Base.encode64()
   end
 
   ### API
+  def mysels do
+    get!("/rest/api/2/myself").body
+  end
+
   def boards do
     get!("/rest/greenhopper/1.0/rapidview").body
   end
