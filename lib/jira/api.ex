@@ -19,7 +19,7 @@ defmodule Jira.API do
 
   ### HTTPoison.Base callbacks
   def process_url(url) do
-    host <> url
+    host() <> url
   end
 
   def process_response_body(body) do
@@ -32,8 +32,8 @@ defmodule Jira.API do
   end
 
   defp decode_body(""), do: ""
-  defp decode_body(<<"<html>",_::binary>> = body), do: body
   defp decode_body(<<"\n\n",_::binary>> = body), do: body
+  defp decode_body(<<"<",_::binary>> = body), do: body
   defp decode_body(body) do
     body |> Poison.decode!
   end
@@ -79,9 +79,20 @@ defmodule Jira.API do
     get!("/rest/api/2/issue/#{key}").body
   end
 
-  def add_ticket_link(key, title, link) do
-    body = %{"object" => %{"url" => link, "title" => title}} |> Poison.encode!
-    post!("/rest/api/2/issue/#{key}/remotelink", body, [{"Content-type", "application/json"}])
+  def ticket_transitions(key) do
+    get!("/rest/api/2/issue/#{key}/transitions?expand=transitions.fields").body
+  end
+
+  def move_ticket(key, transitions_id) do
+    body = %{"transition" => %{"id" => transitions_id}} |> Poison.encode!
+    url = "/rest/api/latest/issue/#{key}/transitions?expand=transitions.fields"
+    post!(url, body, [{"Content-type", "application/json"}])
+  end
+
+  def add_comment(key, comment) do
+    body = %{"body" => comment} |> Poison.encode!
+    url = "/rest/api/2/issue/#{key}/comment"
+    post!(url, body, [{"Content-type", "application/json"}])
   end
 
   def add_ticket_watcher(key, username) do
@@ -93,5 +104,4 @@ defmodule Jira.API do
     body = query |> Poison.encode!
     post!("/rest/api/2/search", body, [{"Content-type", "application/json"}])
   end
-
 end
