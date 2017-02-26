@@ -32,7 +32,11 @@ defmodule Jira.API do
   end
 
   defp decode_body(""), do: ""
-  defp decode_body(body), do: body |> Poison.decode!
+  defp decode_body(<<"<html>",_::binary>> = body), do: body
+  defp decode_body(<<"\n\n",_::binary>> = body), do: body
+  defp decode_body(body) do
+    body |> Poison.decode!
+  end
 
   ### Internal Helpers
   def authorization_header do
@@ -48,6 +52,14 @@ defmodule Jira.API do
   ### API
   def mysels do
     get!("/rest/api/2/myself").body
+  end
+
+  def projects do
+    get!("/rest/api/2/project").body
+  end
+
+  def issues(project) do
+    get!("/rest/api/2/search?jql=project=\"#{project}\"").body
   end
 
   def boards do
